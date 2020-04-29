@@ -1,0 +1,66 @@
+version: '3'
+services:
+  redis:
+    image: redis
+  db:
+    image: mysql:5.7
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_USER: test_user
+      MYSQL_PASSWORD: test_password
+      MYSQL_DATABASE: test_database
+  setup:
+    build: .
+    image: local
+    command: bash /apps/deployment/startup/setup.sh
+    depends_on:
+      - redis
+    volumes:
+      - ./app/alembic:/apps/app/alembic
+      - ./deployment/settings/env:/apps/settings/env
+      - ./deployment/settings/secrets:/apps/settings/secrets
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/apps/deployment/client.json
+  web:
+    image: local
+    command: bash /apps/deployment/startup/app.sh
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+      - setup
+    volumes:
+      - ./deployment/settings/env/:/apps/settings/env/
+      - ./deployment/settings/secrets/:/apps/settings/secrets/
+      - ./deployment/local/:/apps/deployment/nginx/
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/apps/deployment/client.json
+  worker:
+    image: local
+    command: bash /apps/deployment/startup/worker.sh
+    depends_on:
+      - redis
+      - setup
+    volumes:
+      - ./deployment/settings/env:/apps/settings/env
+      - ./deployment/settings/secrets:/apps/settings/secrets
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/apps/deployment/client.json
+      - QUEUE=celery
+  test:
+    image: local
+    command: bash /apps/deployment/startup/test.sh
+    depends_on:
+      - web
+      - worker
+      - db
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/apps/deployment/client.json
+    volumes:
+      - ./deployment/settings/env:/apps/settings/env
+      - ./deployment/settings/secrets:/apps/settings/secrets
+      - ./deployment/settings/test:/apps/settings/test
