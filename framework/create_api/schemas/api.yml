@@ -1,0 +1,138 @@
+openapi: 3.0.0
+info:
+  title: Example DOT Api
+  version: 1.0.0
+servers:
+- url: /api/v1/
+- url: https://example-qa.adara.com/api/v1/
+- url: https://example-prod.adara.com/api/v1/
+paths:
+  /example/json/{internal_id}:
+    get:
+      summary: Sample Get Request
+      operationId: routes.api.example.json.get_example
+      description: Get a tvs score for a particular cookie_id
+      parameters:
+      - name: internal_ida
+        in: path
+        schema:
+          type: integer
+          description: the cookie ID
+        required: True
+      security:
+      - oauth2:
+        - get:example
+      responses:
+        200:
+          description: Successfully returned list of intel scores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cookie_id:
+                    type: integer
+                  score:
+                    type: number
+  /example/json:
+    post:
+      operationId: routes.api.example.json.post_json_example
+      summary: Sample json body post request that triggers a backend task
+      security:
+      - oauth2:
+        - post:json
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                array:
+                  type: array
+                  items:
+                    type: string
+                string:
+                  type: string
+                sub_object:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+              required:
+              - sub_object
+      responses:
+        200:
+          description: Successfully returned list of intel scores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active:
+                    description: feature flag indicating that the feature endpoint is interactive
+                    type: boolean
+                  response:
+                    type: object
+                    properties:
+                      created:
+                        description: unix timestamp of file upload time in seconds
+                        type: integer
+                      job_id:
+                        description: unique id for the request
+                        type: string
+  /example/job/:
+    post:
+      operationId: routes.api.example.job.trigger_job
+      summary: Sample json body post request that triggers a backend task
+      security:
+      - oauth2:
+        - post:job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                array:
+                  type: array
+                  items:
+                    type: string
+                string:
+                  type: string
+                sub_object:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+      responses:
+        200:
+          description: Successfully returned list of intel scores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active:
+                    description: feature flag indicating that the feature endpoint is interactive
+                    type: boolean
+                  response:
+                    type: object
+                    properties:
+                      created:
+                        description: unix timestamp of file upload time in seconds
+                        type: integer
+                      job_id:
+                        description: unique id for the request
+                        type: string
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      x-tokenInfoFunc: routes.core.auth.verify_token
+      flows:
+        clientCredentials:
+          tokenUrl: /core/v1.0/oauth/token
